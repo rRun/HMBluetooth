@@ -1,0 +1,12 @@
+use_frameworks!
+workspace 'HMBluetooth.xcworkspace'
+
+target 'HMBluetooth_Example' do
+  pod 'HMBluetooth', :path => '../'
+  
+  target 'HMBluetooth_Tests' do
+    inherit! :search_paths
+    
+    
+  end
+end

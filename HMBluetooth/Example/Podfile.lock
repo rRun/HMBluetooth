@@ -1,0 +1,16 @@
+PODS:
+  - HMBluetooth (0.1.1)
+
+DEPENDENCIES:
+  - HMBluetooth (from `../`)
+
+EXTERNAL SOURCES:
+  HMBluetooth:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  HMBluetooth: 54689917761e7e7b269eb868db080863dbdae032
+
+PODFILE CHECKSUM: 1d0b8a53a0744d5c40c8b3c297d1de6df2166833
+
+COCOAPODS: 1.0.1
