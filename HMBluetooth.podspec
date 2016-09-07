@@ -23,14 +23,14 @@ Pod::Spec.new do |s|
 
   s.homepage         = 'https://github.com/rRun/HMBluetooth'
   # s.screenshots     = 'www.example.com/screenshots_1', 'www.example.com/screenshots_2'
-  s.license          = { :type => 'MIT', :file => 'HMBluetooth/LICENSE' }
+  s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'hexy' => 'hexy@cdfortis.com' }
   s.source           = { :git => 'https://github.com/rRun/HMBluetooth.git', :tag => s.version.to_s }
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
   s.ios.deployment_target = '7.0'
 
-  s.source_files = 'HMBluetooth/HMBluetooth/Classes/**/*'
+  s.source_files = 'HMBluetooth/Classes/**/*'
   
   # s.resource_bundles = {
   #   'HMBluetooth' => ['HMBluetooth/Assets/*.png']
