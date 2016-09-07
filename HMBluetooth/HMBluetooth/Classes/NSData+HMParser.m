@@ -99,8 +99,8 @@
  * signed value.
  */
 -(int)unsignedToSigned:(int) unsignedInt Size:(int)size{
-    if ((unsignedInt & (1 << size-1)) != 0) {
-        unsignedInt = -1 * ((1 << size-1) - (unsignedInt & ((1 << size-1)-1)));
+    if ((unsignedInt & (1 << (size-1))) != 0) {
+        unsignedInt = -1 * ((1 << (size-1)) - (unsignedInt & ((1 << (size-1))-1)));
     }
     return unsignedInt;
 }

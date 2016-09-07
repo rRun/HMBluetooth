@@ -64,7 +64,7 @@
  */
 -(int)intToSignedBits:(int) i size:(int) size {
     if (i < 0) {
-        i = (1 << size-1) + (i & ((1 << size-1) - 1));
+        i = (1 << (size-1)) + (i & ((1 << (size-1)) - 1));
     }
     return i;
 }

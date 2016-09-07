@@ -9,7 +9,7 @@
 Pod::Spec.new do |s|
   s.name             = 'HMBluetooth'
   s.version          = '0.1.1'
-  s.summary          = 'A short description of HMBluetooth.'
+  s.summary          = '蓝牙测量设备整理'
 
 # This description is used to generate tags and improve search results.
 #   * Think: What does it do? Why did you write it? What is the focus?
@@ -18,10 +18,10 @@ Pod::Spec.new do |s|
 #   * Finally, don't worry about the indent, CocoaPods strips it!
 
   s.description      = <<-DESC
-TODO: Add long description of the pod here.
+                    蓝牙测量设备整理,血压，血糖
                        DESC
 
-  s.homepage         = 'https://github.com/<GITHUB_USERNAME>/HMBluetooth'
+  s.homepage         = 'https://github.com/rRun/HMBluetooth'
   # s.screenshots     = 'www.example.com/screenshots_1', 'www.example.com/screenshots_2'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'hexy' => 'hexy@cdfortis.com' }
@@ -36,7 +36,7 @@ TODO: Add long description of the pod here.
   #   'HMBluetooth' => ['HMBluetooth/Assets/*.png']
   # }
 
-    s.public_header_files = 'Pod/Classes/HMBluetooth.h'
+  #  s.public_header_files = 'HMBluetooth/Classes/HMBluetooth.h'
 
   # s.frameworks = 'UIKit', 'MapKit'
   # s.dependency 'AFNetworking', '~> 2.3'

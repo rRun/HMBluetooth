@@ -24,19 +24,19 @@ const static int OP_CODE_RESPONSE_CODE = 6;
 
 const static int RESPONSE_SUCCESS = 1;
 const static int RESPONSE_OP_CODE_NOT_SUPPORTED = 2;
-const static int RESPONSE_INVALID_OPERATOR = 3;
-const static int RESPONSE_OPERATOR_NOT_SUPPORTED = 4;
-const static int RESPONSE_INVALID_OPERAND = 5;
+//const static int RESPONSE_INVALID_OPERATOR = 3;
+//const static int RESPONSE_OPERATOR_NOT_SUPPORTED = 4;
+//const static int RESPONSE_INVALID_OPERAND = 5;
 const static int RESPONSE_NO_RECORDS_FOUND = 6;
 const static int RESPONSE_ABORT_UNSUCCESSFUL = 7;
 const static int RESPONSE_PROCEDURE_NOT_COMPLETED = 8;
-const static int RESPONSE_OPERAND_NOT_SUPPORTED = 9;
+//const static int RESPONSE_OPERAND_NOT_SUPPORTED = 9;
 
 const static int OPERATOR_NULL = 0;
 const static int OPERATOR_ALL_RECORDS = 1;
-const static int OPERATOR_LESS_THEN_OR_EQUAL = 2;
+//const static int OPERATOR_LESS_THEN_OR_EQUAL = 2;
 const static int OPERATOR_GREATER_THEN_OR_EQUAL = 3;
-const static int OPERATOR_WITHING_RANGE = 4;
+//const static int OPERATOR_WITHING_RANGE = 4;
 const static int OPERATOR_FIRST_RECORD = 5;
 const static int OPERATOR_LAST_RECORD = 6;
 
@@ -94,7 +94,7 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
         offset += 7;
         
         //    先定义一个遵循某个历法的日历对象
-        NSCalendar *greCalendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar];
+        NSCalendar *greCalendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian];
         
         //    定义一个NSDateComponents对象，设置一个时间点
         NSDateComponents *dateComponentsForDate = [[NSDateComponents alloc] init];
@@ -152,9 +152,10 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
 //                    mCallbacks.onDatasetChanged();
 //            }
 //        });
-        
-        if ([self.delegate respondsToSelector:@selector(onDatasetChanged:)]) {
-            [self.delegate onDatasetChanged:self];
+        if (!contextInfoFollows) {
+            if ([self.delegate respondsToSelector:@selector(onDatasetChanged:)]) {
+                [self.delegate onDatasetChanged:self];
+            }
         }
         
     } else if ([GM_CONTEXT_CHARACTERISTIC isEqualToString:characteristicUUID]) {
@@ -265,19 +266,21 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
             }
         }
     } else if (opCode == OP_CODE_RESPONSE_CODE) {
-        int requestedOpCode = [data getIntValueWith:FORMAT_UINT8 Offset:offset];
+//        int requestedOpCode = [data getIntValueWith:FORMAT_UINT8 Offset:offset];
         int responseCode = [data getIntValueWith:FORMAT_UINT8 Offset:offset + 1];
         
         switch (responseCode) {
             case RESPONSE_SUCCESS:
-                if (!mAbort)
+                if (!mAbort){
                     if ([self.delegate respondsToSelector:@selector(onOperationCompleted)]) {
                         [self.delegate onOperationCompleted];
                     }
-                else
+                }
+                else{
                     if ([self.delegate respondsToSelector:@selector(onOperationAborted)]) {
                         [self.delegate onOperationAborted];
                     }
+                }
                 break;
             case RESPONSE_NO_RECORDS_FOUND:
                 if ([self.delegate respondsToSelector:@selector(onOperationCompleted)]) {
@@ -294,8 +297,8 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
             default:
                 if ([self.delegate respondsToSelector:@selector(onOperationFailed)]) {
                     [self.delegate onOperationFailed];
-                     break;
                 }
+                 break;
                
         }
         mAbort = false;
@@ -330,9 +333,10 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
          va_end(args);
     }
     
-    int size = 2 + ((otherParams.count > 0) ? 1 : 0) + otherParams.count * 2; // 1 byte for opCode, 1 for operator, 1 for filter type (if parameters exists) and 2 for each parameter
+    //int size = 2 + ((otherParams.count > 0) ? 1 : 0) + otherParams.count * 2; // 1 byte for opCode, 1 for operator, 1 for filter type (if parameters exists) and 2 for each parameter
    
 //    characteristic.setValue(new byte[size]);
+//    self.opData setValue:<#(nullable id)#> forKey:<#(nonnull NSString *)#>
     
     // write the operation  code
     int offset = 0;

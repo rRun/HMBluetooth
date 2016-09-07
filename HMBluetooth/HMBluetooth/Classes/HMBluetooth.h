@@ -21,7 +21,7 @@ typedef NS_ENUM( NSInteger,DEVICE) {
     GLS_DEVICE=2,//血糖仪
 };
 
-static NSString *const NotiValueChange = @"ValueChange";
+static NSString * NotiValueChange = @"ValueChange";
 /**
  *  扫描设备的回调
  *

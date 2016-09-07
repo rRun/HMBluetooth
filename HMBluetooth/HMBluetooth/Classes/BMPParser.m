@@ -51,7 +51,8 @@
     // parse timestamp if present
     if (timestampPresent) {
         //    先定义一个遵循某个历法的日历对象
-        NSCalendar *greCalendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar];
+        
+        NSCalendar *greCalendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian];
         
         //    定义一个NSDateComponents对象，设置一个时间点
         NSDateComponents *dateComponentsForDate = [[NSDateComponents alloc] init];
