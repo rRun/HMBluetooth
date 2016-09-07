@@ -79,7 +79,7 @@ static id _instance;
     
     [self.manager stopScan];
     if (self.scanBlock) {
-        self.scanBlock(self.DeviceArray);
+        self.scanBlock(self.DeviceArray,nil,0);
     }
     
     self.scanBlock = nil;
@@ -196,7 +196,7 @@ static id _instance;
         }
         
         if (self.scanBlock) {
-            self.scanBlock(self.DeviceArray);
+            self.scanBlock(self.DeviceArray,nil,1);
         }
     }
     

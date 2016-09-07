@@ -25,9 +25,10 @@ static NSString * NotiValueChange = @"ValueChange";
 /**
  *  扫描设备的回调
  *
+ *  @param device state [0=正常结束,1=搜索中,-1=错误]
  *  @param devices 设备数组
  */
-typedef void (^ScanDevicesCompleteBlock)(NSArray *devices);
+typedef void (^ScanDevicesCompleteBlock)(NSArray *devices,NSError *err,NSInteger state);
 /**
  *  连接设备的回调
  *
