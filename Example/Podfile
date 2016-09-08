@@ -3,6 +3,7 @@ workspace 'HMBluetooth.xcworkspace'
 
 target 'HMBluetooth_Example' do
   pod 'HMBluetooth', :path => '../'
+  pod 'MPBluetoothKit', '~> 0.1.0'
   
   target 'HMBluetooth_Tests' do
     inherit! :search_paths

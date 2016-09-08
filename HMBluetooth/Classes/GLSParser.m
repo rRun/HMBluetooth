@@ -258,7 +258,9 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
             
             self.opData = [NSMutableData data];
             [self setOpCode:nil OpCode:OP_CODE_REPORT_STORED_RECORDS Operator:OPERATOR_ALL_RECORDS];
-            [[HMBluetooth sharedInstance]writeCharacteristicWithServiceUUID:GLS_SERVICE_UUID CharacteristicUUID:RACP_CHARACTERISTIC data:self.opData];
+            [[HMBluetooth sharedInstance]writeCharacteristicWithServiceUUID:GLS_SERVICE_UUID CharacteristicUUID:RACP_CHARACTERISTIC data:self.opData CompleteBlock:^(CBPeripheral *peripheral, CBCharacteristic *characteristic, NSError *error) {
+                
+            }];
             
         } else {
             if ([self.delegate respondsToSelector:@selector(onOperationCompleted)]) {
@@ -376,7 +378,9 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
         
         self.opData = [NSMutableData data];
         [self setOpCode:nil OpCode:OP_CODE_REPORT_STORED_RECORDS Operator:OPERATOR_GREATER_THEN_OR_EQUAL,sequenceNumber];
-        [[HMBluetooth sharedInstance]writeCharacteristicWithServiceUUID:GLS_SERVICE_UUID CharacteristicUUID:RACP_CHARACTERISTIC data:self.opData];
+        [[HMBluetooth sharedInstance]writeCharacteristicWithServiceUUID:GLS_SERVICE_UUID CharacteristicUUID:RACP_CHARACTERISTIC data:self.opData CompleteBlock:^(CBPeripheral *peripheral, CBCharacteristic *characteristic, NSError *error) {
+            
+        }];
         // Info:
         // Operators OPERATOR_LESS_THEN_OR_EQUAL and OPERATOR_RANGE are not supported by Nordic Semiconductor Glucose Service in SDK 4.4.2.
     }
@@ -396,7 +400,9 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
     
     self.opData = [NSMutableData data];
     [self setOpCode:nil OpCode:OP_CODE_REPORT_STORED_RECORDS Operator:OPERATOR_LAST_RECORD];
-    [[HMBluetooth sharedInstance]writeCharacteristicWithServiceUUID:GLS_SERVICE_UUID CharacteristicUUID:RACP_CHARACTERISTIC data:self.opData];
+    [[HMBluetooth sharedInstance]writeCharacteristicWithServiceUUID:GLS_SERVICE_UUID CharacteristicUUID:RACP_CHARACTERISTIC data:self.opData CompleteBlock:^(CBPeripheral *peripheral, CBCharacteristic *characteristic, NSError *error) {
+        
+    }];
 
 }
 
@@ -413,7 +419,9 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
     
     self.opData = [NSMutableData data];
     [self setOpCode:nil OpCode:OP_CODE_REPORT_STORED_RECORDS Operator:OPERATOR_FIRST_RECORD];
-    [[HMBluetooth sharedInstance]writeCharacteristicWithServiceUUID:GLS_SERVICE_UUID CharacteristicUUID:RACP_CHARACTERISTIC data:self.opData];
+    [[HMBluetooth sharedInstance]writeCharacteristicWithServiceUUID:GLS_SERVICE_UUID CharacteristicUUID:RACP_CHARACTERISTIC data:self.opData CompleteBlock:^(CBPeripheral *peripheral, CBCharacteristic *characteristic, NSError *error) {
+        
+    }];
 }
 
 /**
@@ -430,7 +438,10 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
     
     self.opData = [NSMutableData data];
     [self setOpCode:nil OpCode:OP_CODE_REPORT_NUMBER_OF_RECORDS Operator:OPERATOR_ALL_RECORDS];
-    [[HMBluetooth sharedInstance]writeCharacteristicWithServiceUUID:GLS_SERVICE_UUID CharacteristicUUID:RACP_CHARACTERISTIC data:self.opData];
+    
+    [[HMBluetooth sharedInstance]writeCharacteristicWithServiceUUID:GLS_SERVICE_UUID CharacteristicUUID:RACP_CHARACTERISTIC data:self.opData CompleteBlock:^(CBPeripheral *peripheral, CBCharacteristic *characteristic, NSError *error) {
+        
+    }];
 }
 
 /**
@@ -466,7 +477,9 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
     
     self.opData = [NSMutableData data];
     [self setOpCode:nil OpCode:OP_CODE_DELETE_STORED_RECORDS Operator:OPERATOR_ALL_RECORDS];
-    [[HMBluetooth sharedInstance]writeCharacteristicWithServiceUUID:GLS_SERVICE_UUID CharacteristicUUID:RACP_CHARACTERISTIC data:self.opData];
+    [[HMBluetooth sharedInstance]writeCharacteristicWithServiceUUID:GLS_SERVICE_UUID CharacteristicUUID:RACP_CHARACTERISTIC data:self.opData CompleteBlock:^(CBPeripheral *peripheral, CBCharacteristic *characteristic, NSError *error) {
+        
+    }];
 
 }
 
@@ -477,7 +490,9 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
     mAbort = true;
     self.opData = [NSMutableData data];
     [self setOpCode:nil OpCode:OP_CODE_ABORT_OPERATION Operator:OPERATOR_NULL];
-    [[HMBluetooth sharedInstance]writeCharacteristicWithServiceUUID:GLS_SERVICE_UUID CharacteristicUUID:RACP_CHARACTERISTIC data:self.opData];
+    [[HMBluetooth sharedInstance]writeCharacteristicWithServiceUUID:GLS_SERVICE_UUID CharacteristicUUID:RACP_CHARACTERISTIC data:self.opData CompleteBlock:^(CBPeripheral *peripheral, CBCharacteristic *characteristic, NSError *error) {
+        
+    }];
 }
 
 #pragma mark -Getter and Setter

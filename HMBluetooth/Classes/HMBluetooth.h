@@ -14,6 +14,9 @@
 
 #import "BMPParserPrt.h"//获取血压计数据的回调
 #import "GLSParserPrt.h"//获取血糖计数据的回调
+#import "HMBluetoothBlock.h"//block回调
+
+#import "HMDevice.h"
 
 typedef NS_ENUM( NSInteger,DEVICE) {
     UNKOWN_DEVICE=0,
@@ -22,29 +25,7 @@ typedef NS_ENUM( NSInteger,DEVICE) {
 };
 
 static NSString * NotiValueChange = @"ValueChange";
-/**
- *  扫描设备的回调
- *
- *  @param device state [0=正常结束,1=搜索中,-1=错误]
- *  @param devices 设备数组
- */
-typedef void (^ScanDevicesCompleteBlock)(NSArray *devices,NSError *err,NSInteger state);
-/**
- *  连接设备的回调
- *
- *  @param device 设备
- *  @param err 错误信息
- */
-typedef void (^ConnectionDeviceBlock)(CBPeripheral *device, NSError *err);
-/**
- *  发现服务和特征的回调
- *
- *  @param serviceArray        服务数组
- *  @param characteristicArray 特征数组
- *  @param err                 错误信息
- */
-typedef void (^ServiceAndCharacteristicBlock)(NSArray *serviceArray, NSArray *characteristicArray, NSError *err);
-
+static NSString * ReadValueChange = @"ValueChanged";
 
 @interface HMBluetooth : NSObject<CBPeripheralDelegate, CBCentralManagerDelegate>
 /**
@@ -59,6 +40,7 @@ typedef void (^ServiceAndCharacteristicBlock)(NSArray *serviceArray, NSArray *ch
  *  是否连接
  */
 @property (nonatomic, assign, readonly, getter = isConnection)  BOOL Connection;
+
 /**
  *  单例
  *
@@ -88,6 +70,7 @@ typedef void (^ServiceAndCharacteristicBlock)(NSArray *serviceArray, NSArray *ch
  *  @param block   回调
  */
 - (void)connectionWithDeviceUUID:(NSString *)uuid TimeOut:(NSUInteger)timeout CompleteBlock:(ConnectionDeviceBlock)block;
+
 /**
  *  断开连接
  */
@@ -108,7 +91,7 @@ typedef void (^ServiceAndCharacteristicBlock)(NSArray *serviceArray, NSArray *ch
  *  @param cUUID 特征UUID
  *  @param data  数据
  */
-- (void)writeCharacteristicWithServiceUUID:(NSString *)sUUID CharacteristicUUID:(NSString *)cUUID data:(NSData *)data;
+- (void)writeCharacteristicWithServiceUUID:(NSString *)sUUID CharacteristicUUID:(NSString *)cUUID data:(NSData *)data CompleteBlock:(PeripheralWriteValueForCharacteristicsBlock)block;
 /**
  *  设置通知
  *
@@ -116,7 +99,7 @@ typedef void (^ServiceAndCharacteristicBlock)(NSArray *serviceArray, NSArray *ch
  *  @param cUUID  特征UUID
  *  @param enable
  */
-- (void)setNotificationForCharacteristicWithServiceUUID:(NSString *)sUUID CharacteristicUUID:(NSString *)cUUID enable:(BOOL)enable;
+- (void)setNotificationForCharacteristicWithServiceUUID:(NSString *)sUUID CharacteristicUUID:(NSString *)cUUID enable:(BOOL)enable CompleteBlock:(PeripheralNotifyValueForCharacteristicsBlock)block;
 /**
  *  读取特征中的数据
  *
@@ -124,7 +107,16 @@ typedef void (^ServiceAndCharacteristicBlock)(NSArray *serviceArray, NSArray *ch
  *  @param cUUID  特征UUID
  *  @param enable
  */
--(void)readCharacteristicWithServiceUUID:(NSString *)sUUID CharacteristicUUID:(NSString *)cUUID;
+-(void)readCharacteristicWithServiceUUID:(NSString *)sUUID CharacteristicUUID:(NSString *)cUUID CompleteBlock:(PeripheralReadValueForCharacteristicBlock)block;
+
+/*!
+ *  读取设备信号
+ *
+ *	@discussion While connected, retrieves the current RSSI of the link.
+ *
+ *  @see		MPPeripheralRedRSSIBlock
+ */
+- (void)readRSSI:(nullable PeripheralReadRSSIBlock)block;
 
 #pragma mark - Load Parser
 -(DEVICE )loadParserWithCharacteristic:(CBCharacteristic *)characteristic;

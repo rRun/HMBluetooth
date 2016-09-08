@@ -11,9 +11,15 @@
 #import "BMPParser.h"
 #import "GLSParser.h"
 
+#import "HMDevice.h"
+
 #define channelOnPeropheralView @"peripheralView"
 
-@interface HMBluetooth()
+typedef void (^GetAddressCompleteBlock)();
+
+@interface HMBluetooth(){
+    NSLock *getMacAddressLock;
+}
 
 @property (nonatomic,strong)NSString *filter;
 
@@ -28,6 +34,10 @@
 @property (nonatomic, copy)  ScanDevicesCompleteBlock scanBlock;
 @property (nonatomic, copy)  ConnectionDeviceBlock connectionBlock;
 @property (nonatomic, copy)  ServiceAndCharacteristicBlock serviceAndcharBlock;
+@property (nonatomic, copy)  PeripheralWriteValueForCharacteristicsBlock writeValueBlock;
+@property (nonatomic, copy)  PeripheralReadValueForCharacteristicBlock readValueBlock;
+@property (nonatomic, copy)  PeripheralNotifyValueForCharacteristicsBlock notifyValueBlock;
+@property (nonatomic, copy)  PeripheralReadRSSIBlock readRSSIBlock;
 
 @end
 
@@ -86,11 +96,12 @@ static id _instance;
 }
 
 - (void)connectionWithDeviceUUID:(NSString *)uuid TimeOut:(NSUInteger)timeout CompleteBlock:(ConnectionDeviceBlock)block {
+    
     self.connectionBlock = block;
     [self performSelector:@selector(connectionTimeOut) withObject:nil afterDelay:timeout];
-    for (CBPeripheral *device in self.DeviceArray) {
-        if ([device.identifier.UUIDString isEqualToString:uuid]) {
-            [self.manager connectPeripheral:device options:@{ CBCentralManagerScanOptionAllowDuplicatesKey:@YES }];
+    for (HMDevice *device in self.DeviceArray) {
+        if ([device.peripheral.identifier.UUIDString isEqualToString:uuid]) {
+            [self.manager connectPeripheral:device.peripheral options:@{ CBCentralManagerScanOptionAllowDuplicatesKey:@YES }];
             break;
         }
     }
@@ -101,10 +112,12 @@ static id _instance;
     [self.ServiceArray removeAllObjects];
     [self.CharacteristicArray removeAllObjects];
     
+    CBPeripheral *currentEvice = self.ConnectionDevice;
     self.ConnectionDevice = nil;
     
-    [self.manager cancelPeripheralConnection:self.ConnectionDevice];
-    
+    [self.manager cancelPeripheralConnection:currentEvice];
+    self.connectionBlock = nil;
+
 }
 
 - (void)discoverServiceAndCharacteristicWithInterval:(NSUInteger)time CompleteBlock:(ServiceAndCharacteristicBlock)block {
@@ -118,7 +131,10 @@ static id _instance;
     [self performSelector:@selector(discoverServiceAndCharacteristicWithTime) withObject:nil afterDelay:time];
 }
 
-- (void)writeCharacteristicWithServiceUUID:(NSString *)sUUID CharacteristicUUID:(NSString *)cUUID data:(NSData *)data {
+- (void)writeCharacteristicWithServiceUUID:(NSString *)sUUID CharacteristicUUID:(NSString *)cUUID data:(NSData *)data  CompleteBlock:(PeripheralWriteValueForCharacteristicsBlock)block{
+    
+    self.writeValueBlock= block;
+    
     for (CBService *service in self.ConnectionDevice.services) {
         if ([service.UUID isEqual:[CBUUID UUIDWithString:sUUID]]) {
             for (CBCharacteristic *characteristic in service.characteristics) {
@@ -130,7 +146,8 @@ static id _instance;
     }
 }
 
-- (void)setNotificationForCharacteristicWithServiceUUID:(NSString *)sUUID CharacteristicUUID:(NSString *)cUUID enable:(BOOL)enable {
+- (void)setNotificationForCharacteristicWithServiceUUID:(NSString *)sUUID CharacteristicUUID:(NSString *)cUUID enable:(BOOL)enable CompleteBlock:(PeripheralNotifyValueForCharacteristicsBlock)block{
+    self.notifyValueBlock = block;
     for (CBService *service in self.ConnectionDevice.services) {
         if ([service.UUID isEqual:[CBUUID UUIDWithString:sUUID]]) {
             for (CBCharacteristic *characteristic in service.characteristics) {
@@ -141,7 +158,8 @@ static id _instance;
         }
     }
 }
--(void)readCharacteristicWithServiceUUID:(NSString *)sUUID CharacteristicUUID:(NSString *)cUUID{
+-(void)readCharacteristicWithServiceUUID:(NSString *)sUUID CharacteristicUUID:(NSString *)cUUID  CompleteBlock:(PeripheralReadValueForCharacteristicBlock)block{
+    self.readValueBlock=block;
     for (CBService *service in self.ConnectionDevice.services) {
         if ([service.UUID isEqual:[CBUUID UUIDWithString:sUUID]]) {
             for (CBCharacteristic *characteristic in service.characteristics) {
@@ -153,6 +171,10 @@ static id _instance;
     }
 }
 
+- (void)readRSSI:(nullable PeripheralReadRSSIBlock)block{
+    _readRSSIBlock = block;
+    [self.ConnectionDevice readRSSI];
+}
 #pragma mark - 私有方法
 
 - (void)connectionTimeOut {
@@ -165,16 +187,89 @@ static id _instance;
 }
 
 - (void)discoverServiceAndCharacteristicWithTime {
-    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(connectionTimeOut) object:nil];
+    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(discoverServiceAndCharacteristicWithTime) object:nil];
     if (self.serviceAndcharBlock) {
         self.serviceAndcharBlock(self.ServiceArray, self.CharacteristicArray, [self wrapperError:@"发现服务和特征完成!" Code:400]);
     }
-    self.connectionBlock = nil;
+    self.serviceAndcharBlock = nil;
+    self.notifyValueBlock = nil;
 }
 
 - (NSError *)wrapperError:(NSString *)msg Code:(NSInteger)code {
     NSError *error = [NSError errorWithDomain:msg code:code userInfo:nil];
     return error;
+}
+
+- (void)getMacAddress:(HMDevice *)hmDevice Block:(GetAddressCompleteBlock)block
+{
+    dispatch_queue_t queue = dispatch_queue_create("com.cdfortis.getmac", DISPATCH_QUEUE_SERIAL);
+    
+    __weak typeof(self) weakSelf = self;
+   
+    dispatch_async(queue, ^{
+        CBUUID *macServiceUUID = [CBUUID UUIDWithString:@"180A"];
+        CBUUID *macCharcteristicUUID = [CBUUID UUIDWithString:@"2A23"];
+        
+        if (!getMacAddressLock) {
+            getMacAddressLock = [[NSLock alloc]init];
+        }
+        
+        [getMacAddressLock lock];
+        
+        [weakSelf connectionWithDeviceUUID:hmDevice.peripheral.identifier.UUIDString TimeOut:12 CompleteBlock:^(CBPeripheral *device, NSError *err) {
+            if (err.code == 401) {
+                [weakSelf discoverServiceAndCharacteristicWithInterval:2 CompleteBlock:^(NSArray *serviceArray, NSArray *characteristicArray, NSError *err) {
+                    CBCharacteristic *hcharacteristic = nil;
+                    for (CBCharacteristic *characteristic in characteristicArray) {
+                        if ([characteristic.UUID isEqual:macCharcteristicUUID] && [characteristic.service.UUID isEqual:macServiceUUID]) {
+                            hcharacteristic = characteristic;
+                            break;
+                        }
+                    }
+                    if (!hcharacteristic||err.code != 400) {
+                        [weakSelf discoverServiceAndCharacteristicWithTime];
+                        [weakSelf disconnectionDevice];
+                        [getMacAddressLock unlock];
+                        return ;
+                    }
+                    
+                    [weakSelf readCharacteristicWithServiceUUID:hcharacteristic.service.UUID.UUIDString CharacteristicUUID:hcharacteristic.UUID.UUIDString CompleteBlock:^(CBPeripheral *peripheral, CBCharacteristic *characteristic, NSError *error, NSData *value) {
+                        
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            //在主线程中更新UI代码
+                            NSString *valueStr = [NSString stringWithFormat:@"%@",value];
+                            NSMutableString *macString = [[NSMutableString alloc] init];
+                            [macString appendString:[[valueStr substringWithRange:NSMakeRange(16, 2)] uppercaseString]];
+                            [macString appendString:@":"];
+                            [macString appendString:[[valueStr substringWithRange:NSMakeRange(14, 2)] uppercaseString]];
+                            [macString appendString:@":"];
+                            [macString appendString:[[valueStr substringWithRange:NSMakeRange(12, 2)] uppercaseString]];
+                            [macString appendString:@":"];
+                            [macString appendString:[[valueStr substringWithRange:NSMakeRange(5, 2)] uppercaseString]];
+                            [macString appendString:@":"];
+                            [macString appendString:[[valueStr substringWithRange:NSMakeRange(3, 2)] uppercaseString]];
+                            [macString appendString:@":"];
+                            [macString appendString:[[valueStr substringWithRange:NSMakeRange(1, 2)] uppercaseString]];
+                            
+                            NSLog(@"macString:%@",macString);
+                            hmDevice.macAddress = macString;
+                            [weakSelf discoverServiceAndCharacteristicWithTime];
+                            [weakSelf disconnectionDevice];
+                            block();
+                        });
+                        [getMacAddressLock unlock];
+                    }];
+                    
+                }];
+            }else{
+                [weakSelf discoverServiceAndCharacteristicWithTime];
+                [weakSelf disconnectionDevice];
+                [getMacAddressLock unlock];
+                return ;
+            }
+        }];
+        
+    });
 }
 
 #pragma mark - CBCentralManagerDelegate代理方法
@@ -187,17 +282,33 @@ static id _instance;
 
 - (void)centralManager:(CBCentralManager *)central didDiscoverPeripheral:(CBPeripheral *)peripheral advertisementData:(NSDictionary *)advertisementData RSSI:(NSNumber *)RSSI {
     
-    if ([peripheral.name rangeOfString:self.filter].length>0) {
+    if ([peripheral.name rangeOfString:self.filter].location != NSNotFound || [self.filter length]==0 || self.filter == nil) {
         
         NSLog(@"发现设备:%@", peripheral);
         
-        if (![self.DeviceArray containsObject:peripheral]) {
-            [self.DeviceArray addObject:peripheral];
+        BOOL isExist = NO;
+        HMDevice *hdevice = nil;
+        for (HMDevice *device in self.DeviceArray) {
+            if ([device.peripheral isEqual:peripheral]) {
+                isExist = YES;
+                hdevice =device;
+                break;
+            }
         }
         
-        if (self.scanBlock) {
-            self.scanBlock(self.DeviceArray,nil,1);
+        if (!isExist) {
+            hdevice = [HMDevice new];
+            hdevice.peripheral = peripheral;
+            [self.DeviceArray addObject:hdevice];
         }
+        
+        __weak typeof(self) weakSelf = self;
+        [self getMacAddress:hdevice Block:^{
+            if (weakSelf.scanBlock) {
+                weakSelf.scanBlock(weakSelf.DeviceArray,nil,1);
+            }
+        }];
+        
     }
     
 }
@@ -254,6 +365,11 @@ static id _instance;
 
 //写入Characteristics数据
 - (void)peripheral:(CBPeripheral *)peripheral didWriteValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error {
+    
+    if (self.writeValueBlock) {
+        self.writeValueBlock(peripheral,characteristic,error);
+    }
+    
     if (error) {
         NSLog(@"didWriteValueForCharacteristic接收数据发生错误,%@", error);
         return;
@@ -263,23 +379,47 @@ static id _instance;
 
 //读取Characteristics的值
 - (void)peripheral:(CBPeripheral *)peripheral didUpdateValueForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error {
+    if (self.readValueBlock) {
+        self.readValueBlock(peripheral,characteristic,error,characteristic.value);
+    }
+    self.readValueBlock=nil;
     if (error) {
         NSLog(@"didUpdateValueForCharacteristic接收数据发生错误,%@", error);
         return;
     }
     
-    [[NSNotificationCenter defaultCenter] postNotificationName:NotiValueChange object:characteristic];
+    NSString *string=[[NSString alloc] initWithData:characteristic.value encoding:NSUTF8StringEncoding];
+    NSLog(@"didUpdateNotificationStateForCharacteristic收到的数据为%@", string);
+    
+    [[NSNotificationCenter defaultCenter] postNotificationName:ReadValueChange object:characteristic];
     
 }
 
+//获取变化的数据
 - (void)peripheral:(CBPeripheral *)peripheral didUpdateNotificationStateForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error {
+    
+    if (self.notifyValueBlock) {
+        self.notifyValueBlock(peripheral,characteristic,error,characteristic.value);
+    }
     if (error) {
         NSLog(@"didUpdateNotificationStateForCharacteristic接收数据发生错误,%@", error);
         return;
     }
     NSString *string=[[NSString alloc] initWithData:characteristic.value encoding:NSUTF8StringEncoding];
     NSLog(@"didUpdateNotificationStateForCharacteristic收到的数据为%@", string);
+    
+    [[NSNotificationCenter defaultCenter] postNotificationName:NotiValueChange object:characteristic];
 }
+
+//获取信号
+- (void)peripheral:(CBPeripheral *)peripheral didReadRSSI:(NSNumber *)RSSI error:(NSError *)error
+{
+    if(self.readRSSIBlock){
+        self.readRSSIBlock(self,RSSI,error);
+        self.readRSSIBlock = nil;
+    }
+}
+
 #pragma mark - getter
 - (BOOL)isReady {
     return self.state == CBCentralManagerStatePoweredOn ? YES : NO;

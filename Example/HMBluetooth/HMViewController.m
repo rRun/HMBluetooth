@@ -30,7 +30,7 @@
 }
 
 - (IBAction)doScan:(id)sender {
-    [self.hmB startScanDevicesWithInterval:50 WithFilter:@"Yuwell" CompleteBlock:^(NSArray *devices) {
+    [self.hmB startScanDevicesWithInterval:50 WithFilter:@"Yuwell" CompleteBlock:^(NSArray<HMDevice *> *devices, NSError *err, NSInteger state) {
         NSLog(@"%@",devices);
         self.devices = devices;
         [self.tableview reloadData];
@@ -46,14 +46,14 @@
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
     
-    CBPeripheral *cb=[self.devices objectAtIndex:indexPath.row];
+    HMDevice *device=[self.devices objectAtIndex:indexPath.row];
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"CEll"];
     if (!cell) {
         cell = [[UITableViewCell alloc]initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:@"CEll"];
     }
     
-    cell.textLabel.text = cb.name;
-    cell.detailTextLabel.text= cb.identifier.UUIDString;
+    cell.textLabel.text = device.peripheral.name;
+    cell.detailTextLabel.text= device.macAddress;
     
     return cell;
 }
@@ -81,7 +81,9 @@
                 }];
                 
                 self.service = tempService;
-                [self.hmB setNotificationForCharacteristicWithServiceUUID:tempService.UUID.UUIDString CharacteristicUUID:BPM_CHARACTERISTIC_UUID enable:YES];
+                [self.hmB setNotificationForCharacteristicWithServiceUUID:tempService.UUID.UUIDString CharacteristicUUID:BPM_CHARACTERISTIC_UUID enable:YES CompleteBlock:^(CBPeripheral *peripheral, CBCharacteristic *characteristic, NSError *error, NSData *value) {
+                    NSLog(@"value:%@",value);
+                }];
                 
             }];
         }
