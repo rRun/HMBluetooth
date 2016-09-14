@@ -81,3 +81,8 @@ typedef void (^PeripheralNotifyValueForCharacteristicsBlock)(CBPeripheral *perip
  */
 typedef void (^PeripheralReadRSSIBlock)(CBPeripheral *peripheral,NSNumber *RSSI, NSError *error);
 
+/**
+ *  获取当前mac地址
+ */
+typedef void (^GetAddressCompleteBlock)(HMDevice *device);
+

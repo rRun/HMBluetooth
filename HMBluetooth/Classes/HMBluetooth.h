@@ -70,7 +70,7 @@ static NSString * ReadValueChange = @"ValueChanged";
  *  @param block   回调
  */
 - (void)connectionWithDeviceUUID:(NSString *)uuid TimeOut:(NSUInteger)timeout CompleteBlock:(ConnectionDeviceBlock)block;
-
+- (void)connectionWithDevice:(CBPeripheral *)device TimeOut:(NSUInteger)timeout CompleteBlock:(ConnectionDeviceBlock)block;
 /**
  *  断开连接
  */
@@ -101,6 +101,14 @@ static NSString * ReadValueChange = @"ValueChanged";
  */
 - (void)setNotificationForCharacteristicWithServiceUUID:(NSString *)sUUID CharacteristicUUID:(NSString *)cUUID enable:(BOOL)enable CompleteBlock:(PeripheralNotifyValueForCharacteristicsBlock)block;
 /**
+ *  设置通知
+ *
+ *  @param service  服务
+ *  @param characteristic  特征
+ *  @param enable
+ */
+-(void)setNotificationForCharacteristicWithService:(CBService *)service Characteristic:(CBCharacteristic *)characteristic enable:(BOOL)enable CompleteBlock:(PeripheralNotifyValueForCharacteristicsBlock)block;
+/**
  *  读取特征中的数据
  *
  *  @param sUUID  服务UUID
@@ -118,6 +126,13 @@ static NSString * ReadValueChange = @"ValueChanged";
  */
 - (void)readRSSI:(nullable PeripheralReadRSSIBlock)block;
 
+/**
+ *  获取某个设备的mac地址
+ *
+ *  @param hmDevice
+ *  @param block    
+ */
+- (void)getMacAddress:(HMDevice *)hmDevice Block:(GetAddressCompleteBlock)block;
 #pragma mark - Load Parser
 -(DEVICE )loadParserWithCharacteristic:(CBCharacteristic *)characteristic;
 @end

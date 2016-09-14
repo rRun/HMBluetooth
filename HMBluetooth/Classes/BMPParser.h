@@ -10,11 +10,11 @@
 #import "BMPParserPrt.h"
 
 /** Blood Pressure service UUID */
-static NSString *BP_SERVICE_UUID = @"00001810-0000-1000-8000-00805f9b34fb";
+static NSString *BP_SERVICE_UUID = @"1810";
 /** Blood Pressure Measurement characteristic UUID */
-static NSString * BPM_CHARACTERISTIC_UUID = @"00002A35-0000-1000-8000-00805f9b34fb";
+static NSString * BPM_CHARACTERISTIC_UUID = @"2A35";
 /** Intermediate Cuff Pressure characteristic UUID */
-static NSString * ICP_CHARACTERISTIC_UUID =@"00002A36-0000-1000-8000-00805f9b34fb";
+static NSString * ICP_CHARACTERISTIC_UUID =@"2A36";
 
 @class CBCharacteristic;
 

@@ -15,7 +15,7 @@
 
 #define channelOnPeropheralView @"peripheralView"
 
-typedef void (^GetAddressCompleteBlock)();
+
 
 @interface HMBluetooth(){
     NSLock *getMacAddressLock;
@@ -43,6 +43,7 @@ typedef void (^GetAddressCompleteBlock)();
 
 @implementation HMBluetooth{
     BOOL _isScaning;
+    dispatch_queue_t getMacAddressqueue;
 }
 
 
@@ -64,6 +65,8 @@ static id _instance;
         _ServiceArray = [[NSMutableArray alloc] init];
         _CharacteristicArray = [[NSMutableArray alloc] init];
         _DeviceArray = [[NSMutableArray alloc] init];
+        
+        getMacAddressqueue = dispatch_queue_create("com.cdfortis.getmac", DISPATCH_QUEUE_SERIAL);
         
     }
     return self;
@@ -105,8 +108,17 @@ static id _instance;
             break;
         }
     }
+ 
 }
 
+- (void)connectionWithDevice:(CBPeripheral *)device TimeOut:(NSUInteger)timeout CompleteBlock:(ConnectionDeviceBlock)block {
+    self.connectionBlock = block;
+    [self performSelector:@selector(connectionTimeOut) withObject:nil afterDelay:timeout];
+    if (device) {
+        [self.manager connectPeripheral:device options:@{ CBCentralManagerScanOptionAllowDuplicatesKey:@YES }];
+    }
+   
+}
 - (void)disconnectionDevice {
     NSLog(@"断开设备连接");
     [self.ServiceArray removeAllObjects];
@@ -115,7 +127,10 @@ static id _instance;
     CBPeripheral *currentEvice = self.ConnectionDevice;
     self.ConnectionDevice = nil;
     
-    [self.manager cancelPeripheralConnection:currentEvice];
+    if (currentEvice) {
+        [self.manager cancelPeripheralConnection:currentEvice];
+    }
+    
     self.connectionBlock = nil;
 
 }
@@ -147,10 +162,10 @@ static id _instance;
 }
 
 - (void)setNotificationForCharacteristicWithServiceUUID:(NSString *)sUUID CharacteristicUUID:(NSString *)cUUID enable:(BOOL)enable CompleteBlock:(PeripheralNotifyValueForCharacteristicsBlock)block{
-    self.notifyValueBlock = block;
-    for (CBService *service in self.ConnectionDevice.services) {
+    self.readValueBlock = block;
+    for (CBService *service in self.ServiceArray) {
         if ([service.UUID isEqual:[CBUUID UUIDWithString:sUUID]]) {
-            for (CBCharacteristic *characteristic in service.characteristics) {
+            for (CBCharacteristic *characteristic in self.CharacteristicArray) {
                 if ([characteristic.UUID isEqual:[CBUUID UUIDWithString:cUUID]]) {
                     [self.ConnectionDevice setNotifyValue:enable forCharacteristic:characteristic];
                 }
@@ -158,11 +173,20 @@ static id _instance;
         }
     }
 }
+-(void)setNotificationForCharacteristicWithService:(CBService *)service Characteristic:(CBCharacteristic *)characteristic enable:(BOOL)enable CompleteBlock:(PeripheralNotifyValueForCharacteristicsBlock)block{
+    
+    self.readValueBlock = block;
+    
+    if (service && characteristic) {
+        [self.ConnectionDevice setNotifyValue:enable forCharacteristic:characteristic];
+    }
+    
+}
 -(void)readCharacteristicWithServiceUUID:(NSString *)sUUID CharacteristicUUID:(NSString *)cUUID  CompleteBlock:(PeripheralReadValueForCharacteristicBlock)block{
     self.readValueBlock=block;
-    for (CBService *service in self.ConnectionDevice.services) {
+    for (CBService *service in self.ServiceArray) {
         if ([service.UUID isEqual:[CBUUID UUIDWithString:sUUID]]) {
-            for (CBCharacteristic *characteristic in service.characteristics) {
+            for (CBCharacteristic *characteristic in self.CharacteristicArray) {
                 if ([characteristic.UUID isEqual:[CBUUID UUIDWithString:cUUID]]) {
                     [self.ConnectionDevice readValueForCharacteristic:characteristic];
                 }
@@ -192,7 +216,6 @@ static id _instance;
         self.serviceAndcharBlock(self.ServiceArray, self.CharacteristicArray, [self wrapperError:@"发现服务和特征完成!" Code:400]);
     }
     self.serviceAndcharBlock = nil;
-    self.notifyValueBlock = nil;
 }
 
 - (NSError *)wrapperError:(NSString *)msg Code:(NSInteger)code {
@@ -202,20 +225,22 @@ static id _instance;
 
 - (void)getMacAddress:(HMDevice *)hmDevice Block:(GetAddressCompleteBlock)block
 {
-    dispatch_queue_t queue = dispatch_queue_create("com.cdfortis.getmac", DISPATCH_QUEUE_SERIAL);
-    
     __weak typeof(self) weakSelf = self;
-   
-    dispatch_async(queue, ^{
+    
+//    if (!getMacAddressqueue) {
+//        getMacAddressqueue = dispatch_queue_create("com.cdfortis.getmac", DISPATCH_QUEUE_SERIAL);
+//    }
+    
+//    dispatch_async(getMacAddressqueue, ^{
         CBUUID *macServiceUUID = [CBUUID UUIDWithString:@"180A"];
         CBUUID *macCharcteristicUUID = [CBUUID UUIDWithString:@"2A23"];
         
-        if (!getMacAddressLock) {
-            getMacAddressLock = [[NSLock alloc]init];
-        }
-        
-        [getMacAddressLock lock];
-        
+//        if (!getMacAddressLock) {
+//            getMacAddressLock = [[NSLock alloc]init];
+//        }
+//        
+//        [getMacAddressLock lock];
+    
         [weakSelf connectionWithDeviceUUID:hmDevice.peripheral.identifier.UUIDString TimeOut:12 CompleteBlock:^(CBPeripheral *device, NSError *err) {
             if (err.code == 401) {
                 [weakSelf discoverServiceAndCharacteristicWithInterval:2 CompleteBlock:^(NSArray *serviceArray, NSArray *characteristicArray, NSError *err) {
@@ -227,9 +252,8 @@ static id _instance;
                         }
                     }
                     if (!hcharacteristic||err.code != 400) {
-                        [weakSelf discoverServiceAndCharacteristicWithTime];
                         [weakSelf disconnectionDevice];
-                        [getMacAddressLock unlock];
+//                        [getMacAddressLock unlock];
                         return ;
                     }
                     
@@ -255,21 +279,21 @@ static id _instance;
                             hmDevice.macAddress = macString;
                             [weakSelf discoverServiceAndCharacteristicWithTime];
                             [weakSelf disconnectionDevice];
-                            block();
+                            block(hmDevice);
                         });
-                        [getMacAddressLock unlock];
+//                        [getMacAddressLock unlock];
                     }];
                     
                 }];
             }else{
                 [weakSelf discoverServiceAndCharacteristicWithTime];
                 [weakSelf disconnectionDevice];
-                [getMacAddressLock unlock];
+//                [getMacAddressLock unlock];
                 return ;
             }
         }];
         
-    });
+//    });
 }
 
 #pragma mark - CBCentralManagerDelegate代理方法
@@ -300,15 +324,15 @@ static id _instance;
             hdevice = [HMDevice new];
             hdevice.peripheral = peripheral;
             [self.DeviceArray addObject:hdevice];
-        }
+        }else
+            return;
         
         __weak typeof(self) weakSelf = self;
-        [self getMacAddress:hdevice Block:^{
+        [self getMacAddress:hdevice Block:^(HMDevice *device) {
             if (weakSelf.scanBlock) {
                 weakSelf.scanBlock(weakSelf.DeviceArray,nil,1);
             }
         }];
-        
     }
     
 }
@@ -382,7 +406,6 @@ static id _instance;
     if (self.readValueBlock) {
         self.readValueBlock(peripheral,characteristic,error,characteristic.value);
     }
-    self.readValueBlock=nil;
     if (error) {
         NSLog(@"didUpdateValueForCharacteristic接收数据发生错误,%@", error);
         return;
@@ -395,9 +418,8 @@ static id _instance;
     
 }
 
-//获取变化的数据
+//获取状态变化的数据
 - (void)peripheral:(CBPeripheral *)peripheral didUpdateNotificationStateForCharacteristic:(CBCharacteristic *)characteristic error:(NSError *)error {
-    
     if (self.notifyValueBlock) {
         self.notifyValueBlock(peripheral,characteristic,error,characteristic.value);
     }
