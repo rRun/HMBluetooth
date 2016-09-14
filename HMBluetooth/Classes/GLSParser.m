@@ -49,16 +49,32 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
 
 @interface GLSParser(){
     BOOL mAbort;
+    Byte *mValue;
 }
 
-@property(nonatomic,strong) NSMutableArray<GlucoseRecord *> *mRecords;
+@property(nonatomic,strong) NSMutableDictionary<NSString *,GlucoseRecord *> *mRecords;
 @property(nonatomic,strong) NSMutableData *opData;//操作的数据
+
 @property(nonatomic,strong) CBCharacteristic *mGlucoseMeasurementCharacteristic;
 @property(nonatomic,strong) CBCharacteristic *mGlucoseMeasurementContextCharacteristic;
+@property(nonatomic,strong) CBCharacteristic *mRecordAccessControlPointCharacteristic;
 
 @end
 
 @implementation GLSParser
+-(instancetype)initWithMeasurementCharacteristic:(CBCharacteristic *)mGlucoseMeasurementCharacteristic  MeasurementContextCharacteristic:(CBCharacteristic *)mGlucoseMeasurementContextCharacteristic AccessControlPointCharacteristic:(CBCharacteristic *)mRecordAccessControlPointCharacteristic{
+    
+    self = [super init];
+    
+    if (self) {
+        self.mGlucoseMeasurementCharacteristic = mGlucoseMeasurementCharacteristic;
+        self.mGlucoseMeasurementContextCharacteristic = mGlucoseMeasurementContextCharacteristic;
+        self.mRecordAccessControlPointCharacteristic = mRecordAccessControlPointCharacteristic;
+    }
+    
+    return self;
+}
+
 -(void)parseGLSValueWithCharacteristic:(CBCharacteristic *)characteristic{
     if ([characteristic.UUID.UUIDString isEqualToString:RACP_CHARACTERISTIC]) {
         [self parseGLSOpValue:characteristic.value withCharacteristic:characteristic.UUID.UUIDString];
@@ -66,6 +82,8 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
          [self parseGLSValue:characteristic.value withCharacteristic:characteristic.UUID.UUIDString];
     }
 }
+
+
 -(void)parseGLSValue:(NSData*)data withCharacteristic:(NSString *)characteristicUUID{
     
     if ([characteristicUUID isEqualToString:GM_CHARACTERISTIC]) {
@@ -152,6 +170,7 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
 //                    mCallbacks.onDatasetChanged();
 //            }
 //        });
+        [self.mRecords setObject:record forKey:[NSString stringWithFormat:@"%d",record.sequenceNumber]];
         if (!contextInfoFollows) {
             if ([self.delegate respondsToSelector:@selector(onDatasetChanged:)]) {
                 [self.delegate onDatasetChanged:self];
@@ -175,22 +194,15 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
         int sequenceNumber = [data getIntValueWith:FORMAT_UINT16 Offset:offset];
         offset += 2;
         
-        GlucoseRecord *record = nil;
+        GlucoseRecord *record = [self.mRecords objectForKey:[NSString stringWithFormat:@"%d",sequenceNumber]];
         
-        for (NSInteger i =0; i<self.mRecords.count; i++) {
-            GlucoseRecord *tempRecord = [self.mRecords objectAtIndex:i];
-            if (tempRecord.sequenceNumber == sequenceNumber) {
-                record = tempRecord;
-                break;
-            }
-        }
-        
-        if (record == nil) {
+        if (!record) {
+            NSLog(@"Context information with unknown sequence number: %d",sequenceNumber);
             return;
         }
         
-        
-        MeasurementContext *context = record.context;
+        MeasurementContext *context = [MeasurementContext new];
+        record.context = context;
         
         if (moreFlagsPresent)
             offset += 1;
@@ -256,11 +268,9 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
         // Request the records
         if (number > 0) {
             
-            self.opData = [NSMutableData data];
-            [self setOpCode:nil OpCode:OP_CODE_REPORT_STORED_RECORDS Operator:OPERATOR_ALL_RECORDS];
-            [[HMBluetooth sharedInstance]writeCharacteristicWithServiceUUID:GLS_SERVICE_UUID CharacteristicUUID:RACP_CHARACTERISTIC data:self.opData CompleteBlock:^(CBPeripheral *peripheral, CBCharacteristic *characteristic, NSError *error) {
-                
-            }];
+            CBCharacteristic *racpCharacteristic = self.mRecordAccessControlPointCharacteristic;
+            
+            [self setOpCode:racpCharacteristic OpCode:OP_CODE_REPORT_STORED_RECORDS Operator:OPERATOR_ALL_RECORDS];
             
         } else {
             if ([self.delegate respondsToSelector:@selector(onOperationCompleted)]) {
@@ -268,7 +278,7 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
             }
         }
     } else if (opCode == OP_CODE_RESPONSE_CODE) {
-//        int requestedOpCode = [data getIntValueWith:FORMAT_UINT8 Offset:offset];
+        int requestedOpCode = [data getIntValueWith:FORMAT_UINT8 Offset:offset];
         int responseCode = [data getIntValueWith:FORMAT_UINT8 Offset:offset + 1];
         
         switch (responseCode) {
@@ -335,33 +345,45 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
          va_end(args);
     }
     
-    //int size = 2 + ((otherParams.count > 0) ? 1 : 0) + otherParams.count * 2; // 1 byte for opCode, 1 for operator, 1 for filter type (if parameters exists) and 2 for each parameter
-   
-//    characteristic.setValue(new byte[size]);
-//    self.opData setValue:<#(nullable id)#> forKey:<#(nonnull NSString *)#>
+    int size = 2 + ((otherParams.count > 0) ? 1 : 0) + otherParams.count * 2; // 1 byte for opCode, 1 for operator, 1 for filter type (if parameters exists) and 2 for each parameter
+    
+    Byte *values = NULL;
+    values  = (int *)malloc(size*sizeof(Byte));
+    
+    [self setValues:values];
+    
     
     // write the operation  code
     int offset = 0;
-    [self.opData setValue:opCode FormatType:FORMAT_UINT8 Offset:offset];
+    
+    [self setValue:opCode FormatType:FORMAT_UINT8 Offset:offset];
     offset += 1;
     
     // write the operator. This is always present but may be equal to OPERATOR_NULL
-    [self.opData setValue:operator FormatType:FORMAT_UINT8 Offset:offset];
+    [self setValue:operator FormatType:FORMAT_UINT8 Offset:offset];
     
     offset += 1;
     
     // if parameters exists, append them. Parameters should be sorted from minimum to maximum. Currently only one or two params are allowed
     if (otherParams.count > 0) {
         // our implementation use only sequence number as a filer type
-        [self.opData setValue:FILTER_TYPE_SEQUENCE_NUMBER FormatType:FORMAT_UINT8 Offset:offset];
+        [self setValue:FILTER_TYPE_SEQUENCE_NUMBER FormatType:FORMAT_UINT8 Offset:offset];
         offset += 1;
         
         for (NSNumber * value in otherParams) {
-            [self.opData setValue:[value intValue] FormatType:FORMAT_UINT16 Offset:offset];
+            [self setValue:[value intValue] FormatType:FORMAT_UINT16 Offset:offset];
 
             offset += 2;
         }
     }
+    
+    NSData *datas = [NSData dataWithBytes:mValue length:[self getArrayLen:mValue]];
+    
+    [[HMBluetooth sharedInstance]writeCharacteristicWithService:characteristic.service Characteristic:characteristic data:datas CompleteBlock:^(CBPeripheral *peripheral, CBCharacteristic *characteristic, NSError *error) {
+        
+    }];
+    
+    free(values);
 }
 #pragma mark - Records
 -(void)refreshRecords{
@@ -373,14 +395,13 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
         }
         
         // obtain the last sequence number
-        GlucoseRecord *record=[self.mRecords lastObject];
-        int sequenceNumber = record.sequenceNumber + 1;
+        int sequenceNumber =[[self.mRecords.allKeys lastObject] intValue];
+        
+        CBCharacteristic *characteristic = self.mRecordAccessControlPointCharacteristic;
         
         self.opData = [NSMutableData data];
-        [self setOpCode:nil OpCode:OP_CODE_REPORT_STORED_RECORDS Operator:OPERATOR_GREATER_THEN_OR_EQUAL,sequenceNumber];
-        [[HMBluetooth sharedInstance]writeCharacteristicWithServiceUUID:GLS_SERVICE_UUID CharacteristicUUID:RACP_CHARACTERISTIC data:self.opData CompleteBlock:^(CBPeripheral *peripheral, CBCharacteristic *characteristic, NSError *error) {
-            
-        }];
+        [self setOpCode:characteristic OpCode:OP_CODE_REPORT_STORED_RECORDS Operator:OPERATOR_GREATER_THEN_OR_EQUAL,sequenceNumber];
+
         // Info:
         // Operators OPERATOR_LESS_THEN_OR_EQUAL and OPERATOR_RANGE are not supported by Nordic Semiconductor Glucose Service in SDK 4.4.2.
     }
@@ -398,11 +419,11 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
         [self.delegate onOperationStarted];
     }
     
+    CBCharacteristic *characteristic = self.mRecordAccessControlPointCharacteristic;
+    
     self.opData = [NSMutableData data];
-    [self setOpCode:nil OpCode:OP_CODE_REPORT_STORED_RECORDS Operator:OPERATOR_LAST_RECORD];
-    [[HMBluetooth sharedInstance]writeCharacteristicWithServiceUUID:GLS_SERVICE_UUID CharacteristicUUID:RACP_CHARACTERISTIC data:self.opData CompleteBlock:^(CBPeripheral *peripheral, CBCharacteristic *characteristic, NSError *error) {
-        
-    }];
+    [self setOpCode:characteristic OpCode:OP_CODE_REPORT_STORED_RECORDS Operator:OPERATOR_LAST_RECORD];
+
 
 }
 
@@ -417,11 +438,10 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
         [self.delegate onOperationStarted];
     }
     
+    CBCharacteristic *characteristic = self.mRecordAccessControlPointCharacteristic;
     self.opData = [NSMutableData data];
-    [self setOpCode:nil OpCode:OP_CODE_REPORT_STORED_RECORDS Operator:OPERATOR_FIRST_RECORD];
-    [[HMBluetooth sharedInstance]writeCharacteristicWithServiceUUID:GLS_SERVICE_UUID CharacteristicUUID:RACP_CHARACTERISTIC data:self.opData CompleteBlock:^(CBPeripheral *peripheral, CBCharacteristic *characteristic, NSError *error) {
-        
-    }];
+    [self setOpCode:characteristic OpCode:OP_CODE_REPORT_STORED_RECORDS Operator:OPERATOR_FIRST_RECORD];
+
 }
 
 /**
@@ -437,11 +457,10 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
     }
     
     self.opData = [NSMutableData data];
-    [self setOpCode:nil OpCode:OP_CODE_REPORT_NUMBER_OF_RECORDS Operator:OPERATOR_ALL_RECORDS];
     
-    [[HMBluetooth sharedInstance]writeCharacteristicWithServiceUUID:GLS_SERVICE_UUID CharacteristicUUID:RACP_CHARACTERISTIC data:self.opData CompleteBlock:^(CBPeripheral *peripheral, CBCharacteristic *characteristic, NSError *error) {
-        
-    }];
+    CBCharacteristic *characteristic = self.mRecordAccessControlPointCharacteristic;
+    [self setOpCode:characteristic OpCode:OP_CODE_REPORT_NUMBER_OF_RECORDS Operator:OPERATOR_ALL_RECORDS];
+
 }
 
 /**
@@ -476,10 +495,11 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
     }
     
     self.opData = [NSMutableData data];
-    [self setOpCode:nil OpCode:OP_CODE_DELETE_STORED_RECORDS Operator:OPERATOR_ALL_RECORDS];
-    [[HMBluetooth sharedInstance]writeCharacteristicWithServiceUUID:GLS_SERVICE_UUID CharacteristicUUID:RACP_CHARACTERISTIC data:self.opData CompleteBlock:^(CBPeripheral *peripheral, CBCharacteristic *characteristic, NSError *error) {
-        
-    }];
+    
+    CBCharacteristic *characteristic = self.mRecordAccessControlPointCharacteristic;
+    
+    [self setOpCode:characteristic OpCode:OP_CODE_DELETE_STORED_RECORDS Operator:OPERATOR_ALL_RECORDS];
+   
 
 }
 
@@ -489,12 +509,96 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
 -(void)abort{
     mAbort = true;
     self.opData = [NSMutableData data];
-    [self setOpCode:nil OpCode:OP_CODE_ABORT_OPERATION Operator:OPERATOR_NULL];
-    [[HMBluetooth sharedInstance]writeCharacteristicWithServiceUUID:GLS_SERVICE_UUID CharacteristicUUID:RACP_CHARACTERISTIC data:self.opData CompleteBlock:^(CBPeripheral *peripheral, CBCharacteristic *characteristic, NSError *error) {
-        
-    }];
+    
+     CBCharacteristic *characteristic = self.mRecordAccessControlPointCharacteristic;
+    
+    [self setOpCode:characteristic OpCode:OP_CODE_ABORT_OPERATION Operator:OPERATOR_NULL];
 }
 
+#pragma mark - Other
+/**
+ * Updates the locally stored value of this characteristic.
+ *
+ * <p>This function modifies the locally stored cached value of this
+ * characteristic. To send the value to the remote device, call
+ * {@link BluetoothGatt#writeCharacteristic} to send the value to the
+ * remote device.
+ *
+ * @param value New value for this characteristic
+ * @return true if the locally stored value has been set, false if the
+ *              requested value could not be stored locally.
+ */
+-(BOOL)setValues:(Byte *)value {
+    mValue = value;
+    return true;
+}
+/**
+ * Set the locally stored value of this characteristic.
+ * <p>See {@link #setValue(byte[])} for details.
+ *
+ * @param value New value for this characteristic
+ * @param formatType Integer format type used to transform the value parameter
+ * @param offset Offset at which the value should be placed
+ * @return true if the locally stored value has been set
+ */
+-(BOOL)setValue:(int) value FormatType:(int) formatType Offset:(int)offset {
+    
+    int len = offset + [[NSData new] getTypeLen:formatType];
+    
+    if (mValue == nil) mValue = malloc(sizeof(Byte)*len);
+    
+    
+    if (len > [self getArrayLen:mValue]) return false;
+    switch (formatType) {
+        case FORMAT_SINT8:
+            value = [self intToSignedBits:value size:8];
+            // Fall-through intended
+        case FORMAT_UINT8:
+            mValue[offset] = (Byte)(value & 0xFF);
+            //            mValue[offset] = (Byte*)(value & 0xFF);
+            break;
+            
+        case FORMAT_SINT16:
+            value = [self intToSignedBits:value size:16];
+            // Fall-through intended
+        case FORMAT_UINT16:
+            mValue[offset++] = (Byte)(value & 0xFF);
+            mValue[offset] = (Byte)((value >> 8) & 0xFF);
+            break;
+            
+        case FORMAT_SINT32:
+            value = [self intToSignedBits:value size:32];
+            // Fall-through intended
+        case FORMAT_UINT32:
+            mValue[offset++] = (Byte)(value & 0xFF);
+            mValue[offset++] = (Byte)((value >> 8) & 0xFF);
+            mValue[offset++] = (Byte)((value >> 16) & 0xFF);
+            mValue[offset] = (Byte)((value >> 24) & 0xFF);
+            break;
+            
+        default:
+            return false;
+    }
+    return true;
+}
+
+#pragma mark  - Private
+/**
+ * Convert an integer into the signed bits of a given length.
+ */
+-(int)intToSignedBits:(int) i size:(int) size {
+    if (i < 0) {
+        i = (1 << (size-1)) + (i & ((1 << (size-1)) - 1));
+    }
+    return i;
+}
+
+-(int) getArrayLen:(Byte [])array
+{
+    
+    return (sizeof(array) / sizeof(array[0]));
+    
+}
 #pragma mark -Getter and Setter
 -(NSMutableArray<GlucoseRecord *>*)mRecords{
     if (!_mRecords) {

@@ -23,14 +23,15 @@
     
     int len = offset + [self getTypeLen:formatType];
     NSMutableData *mValue = [[NSMutableData alloc]initWithLength:len];
-    if (len > mValue.length) return false;
     
+    if (len > self.length) return false;
+    self.bytes;
     switch (formatType) {
         case FORMAT_SINT8:
             value = [self intToSignedBits:value size:8];
             // Fall-through intended
         case FORMAT_UINT8:
-            [mValue replaceBytesInRange:NSMakeRange(offset, 1) withBytes:(Byte*)(value & 0xFF)];
+            [self replaceBytesInRange:NSMakeRange(offset, 1) withBytes:(Byte*)(value & 0xFF)];
 //            mValue[offset] = (Byte*)(value & 0xFF);
             break;
             

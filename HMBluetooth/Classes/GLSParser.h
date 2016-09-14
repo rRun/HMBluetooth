@@ -29,12 +29,14 @@ static NSString * RACP_CHARACTERISTIC = @"00002A52-0000-1000-8000-00805f9b34fb";
 
 @property (nonatomic,weak)id <GLSParserPrt> delegate;
 
+-(instancetype)initWithMeasurementCharacteristic:(CBCharacteristic *)mGlucoseMeasurementCharacteristic  MeasurementContextCharacteristic:(CBCharacteristic *)mGlucoseMeasurementContextCharacteristic AccessControlPointCharacteristic:(CBCharacteristic *)mRecordAccessControlPointCharacteristic;
+
 #pragma mark - GLS Value
 
 -(void)parseGLSValueWithCharacteristic:(CBCharacteristic *)characteristic;//解析
-
 -(void)parseGLSValue:(NSData*)data withCharacteristic:(NSString *)characteristicUUID;//解析返回值
--(void)parseGLSOpValue:(NSData*)data withCharacteristic:(NSString *)characteristicUUID;//解析操作后的返回值
+
+-(void)parseGLSOpValue:(NSData*)data withCharacteristic:(NSString *)characteristicUUID;//解析操作后状态的返回值
 
 -(NSArray<GlucoseRecord *>*) getRecords;//获取所有记录
 #pragma mark - record

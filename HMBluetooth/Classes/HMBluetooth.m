@@ -161,6 +161,15 @@ static id _instance;
     }
 }
 
+- (void)writeCharacteristicWithService:(CBService *)service Characteristic:(CBCharacteristic *)characteristic data:(NSData *)data CompleteBlock:(PeripheralWriteValueForCharacteristicsBlock)block{
+    self.writeValueBlock= block;
+    
+    if (characteristic) {
+        [self.ConnectionDevice writeValue:data forCharacteristic:characteristic type:CBCharacteristicWriteWithResponse];
+    }
+    
+}
+
 - (void)setNotificationForCharacteristicWithServiceUUID:(NSString *)sUUID CharacteristicUUID:(NSString *)cUUID enable:(BOOL)enable CompleteBlock:(PeripheralNotifyValueForCharacteristicsBlock)block{
     self.readValueBlock = block;
     for (CBService *service in self.ServiceArray) {

@@ -92,6 +92,8 @@ static NSString * ReadValueChange = @"ValueChanged";
  *  @param data  数据
  */
 - (void)writeCharacteristicWithServiceUUID:(NSString *)sUUID CharacteristicUUID:(NSString *)cUUID data:(NSData *)data CompleteBlock:(PeripheralWriteValueForCharacteristicsBlock)block;
+
+- (void)writeCharacteristicWithService:(CBService *)service Characteristic:(CBCharacteristic *)characteristic data:(NSData *)data CompleteBlock:(PeripheralWriteValueForCharacteristicsBlock)block;
 /**
  *  设置通知
  *
