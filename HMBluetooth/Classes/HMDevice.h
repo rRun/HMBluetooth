@@ -12,5 +12,6 @@
 
 @property (nonatomic,strong)CBPeripheral *peripheral;
 @property (nonatomic,strong)NSString * macAddress;
-
+@property (nonatomic,strong)NSArray * services;
+@property (nonatomic,strong)NSArray * charaters;
 @end

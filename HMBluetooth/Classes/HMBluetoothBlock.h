@@ -28,7 +28,7 @@ typedef void (^ScanDevicesCompleteBlock)(NSArray<HMDevice *> *devices,NSError *e
  *  @param device 设备
  *  @param err 错误信息
  */
-typedef void (^ConnectionDeviceBlock)(CBPeripheral *device, NSError *err);
+typedef void (^ConnectionDeviceBlock)(HMDevice *device, NSError *err);
 
 /**
  *  发现服务和特征的回调
@@ -49,7 +49,7 @@ typedef void (^ServiceAndCharacteristicBlock)(NSArray *serviceArray, NSArray *ch
  *  @param characteristic
  *  @param error
  */
-typedef void (^PeripheralReadValueForCharacteristicBlock)(CBPeripheral *peripheral,CBCharacteristic *characteristic,NSError *error,NSData *value);
+typedef void (^PeripheralReadValueForCharacteristicBlock)(HMDevice *device,CBCharacteristic *characteristic,NSError *error,NSData *value);
 
 /**
  *  向Characteristic写入数据的回调
@@ -60,7 +60,7 @@ typedef void (^PeripheralReadValueForCharacteristicBlock)(CBPeripheral *peripher
  *
  *  @return
  */
-typedef void (^PeripheralWriteValueForCharacteristicsBlock)(CBPeripheral *peripheral,CBCharacteristic *characteristic,NSError *error);
+typedef void (^PeripheralWriteValueForCharacteristicsBlock)(HMDevice *device,CBCharacteristic *characteristic,NSError *error);
 
 /**
  *  从Characteristic监听数据的回调
@@ -69,7 +69,7 @@ typedef void (^PeripheralWriteValueForCharacteristicsBlock)(CBPeripheral *periph
  *  @param characteristic
  *  @param error
  */
-typedef void (^PeripheralNotifyValueForCharacteristicsBlock)(CBPeripheral *peripheral,CBCharacteristic *characteristic,NSError *error,NSData *value);
+typedef void (^PeripheralNotifyValueForCharacteristicsBlock)(HMDevice *device,CBCharacteristic *characteristic,NSError *error,NSData *value);
 
 
 /**
@@ -79,7 +79,7 @@ typedef void (^PeripheralNotifyValueForCharacteristicsBlock)(CBPeripheral *perip
  *  @param RSSI
  *  @param error
  */
-typedef void (^PeripheralReadRSSIBlock)(CBPeripheral *peripheral,NSNumber *RSSI, NSError *error);
+typedef void (^PeripheralReadRSSIBlock)(HMDevice *device,NSNumber *RSSI, NSError *error);
 
 /**
  *  获取当前mac地址

@@ -70,12 +70,15 @@ static NSString * ReadValueChange = @"ValueChanged";
  *  @param block   回调
  */
 - (void)connectionWithDeviceUUID:(NSString *)uuid TimeOut:(NSUInteger)timeout CompleteBlock:(ConnectionDeviceBlock)block;
-- (void)connectionWithDevice:(CBPeripheral *)device TimeOut:(NSUInteger)timeout CompleteBlock:(ConnectionDeviceBlock)block;
+- (void)connectionWithDevice:(HMDevice *)device TimeOut:(NSUInteger)timeout CompleteBlock:(ConnectionDeviceBlock)block;
+//队列连接
+- (void)runloopConnectionWithDevice:(HMDevice *)device TimeOut:(NSUInteger)timeout CompleteBlock:(ConnectionDeviceBlock)block ;
 /**
  *  断开连接
  */
 - (void)disconnectionDevice;
-
+//断开队列循环，直到最后一个停止
+-(void)disconnectRunloopDevice;
 #pragma mark - Service And Character
 /**
  *  扫描服务和特征
@@ -119,6 +122,7 @@ static NSString * ReadValueChange = @"ValueChanged";
  */
 -(void)readCharacteristicWithServiceUUID:(NSString *)sUUID CharacteristicUUID:(NSString *)cUUID CompleteBlock:(PeripheralReadValueForCharacteristicBlock)block;
 
+-(void)readCharacteristicWithService:(CBService *)service Characteristic:(CBCharacteristic *)characteristic  CompleteBlock:(PeripheralReadValueForCharacteristicBlock)block;
 /*!
  *  读取设备信号
  *
@@ -134,7 +138,8 @@ static NSString * ReadValueChange = @"ValueChanged";
  *  @param hmDevice
  *  @param block    
  */
-- (void)getMacAddress:(HMDevice *)hmDevice Block:(GetAddressCompleteBlock)block;
+-(void)getMacAddress:(HMDevice *)hmDevice Characteristics:(NSArray *)characteristicArray Block:(GetAddressCompleteBlock)block;
+/*- (void)getMacAddress1:(HMDevice *)hmDevice Block:(GetAddressCompleteBlock)block;*/
 #pragma mark - Load Parser
 -(DEVICE )loadParserWithCharacteristic:(CBCharacteristic *)characteristic;
 @end

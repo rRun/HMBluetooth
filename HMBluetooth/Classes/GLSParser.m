@@ -379,7 +379,7 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
     
     NSData *datas = [NSData dataWithBytes:mValue length:[self getArrayLen:mValue]];
     
-    [[HMBluetooth sharedInstance]writeCharacteristicWithService:characteristic.service Characteristic:characteristic data:datas CompleteBlock:^(CBPeripheral *peripheral, CBCharacteristic *characteristic, NSError *error) {
+    [[HMBluetooth sharedInstance]writeCharacteristicWithService:characteristic.service Characteristic:characteristic data:datas CompleteBlock:^(HMDevice *peripheral, CBCharacteristic *characteristic, NSError *error) {
         
     }];
     
@@ -468,7 +468,7 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
  *
  * @return the records list
  */
--(NSArray<GlucoseRecord *>*) getRecords{
+-(NSDictionary<NSString *, GlucoseRecord *>*) getRecords{
     return self.mRecords;
 }
 
@@ -600,9 +600,9 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
     
 }
 #pragma mark -Getter and Setter
--(NSMutableArray<GlucoseRecord *>*)mRecords{
+-(NSDictionary<NSString *, GlucoseRecord *>*)mRecords{
     if (!_mRecords) {
-        _mRecords = [NSMutableArray new];
+        _mRecords = [NSDictionary new];
     }
     return _mRecords;
 }

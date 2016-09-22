@@ -38,7 +38,7 @@ static NSString * RACP_CHARACTERISTIC = @"00002A52-0000-1000-8000-00805f9b34fb";
 
 -(void)parseGLSOpValue:(NSData*)data withCharacteristic:(NSString *)characteristicUUID;//解析操作后状态的返回值
 
--(NSArray<GlucoseRecord *>*) getRecords;//获取所有记录
+-(NSDictionary<NSString *, GlucoseRecord *>*) getRecords;//获取所有记录
 #pragma mark - record
 -(void)refreshRecords;
 
