@@ -76,7 +76,7 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
 }
 
 -(void)parseGLSValueWithCharacteristic:(CBCharacteristic *)characteristic{
-    if ([characteristic.UUID.UUIDString isEqualToString:RACP_CHARACTERISTIC]) {
+    if ([characteristic.UUID isEqual:[CBUUID UUIDWithString:RACP_CHARACTERISTIC]]) {
         [self parseGLSOpValue:characteristic.value withCharacteristic:characteristic.UUID.UUIDString];
     }else{
          [self parseGLSValue:characteristic.value withCharacteristic:characteristic.UUID.UUIDString];
@@ -86,7 +86,7 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
 
 -(void)parseGLSValue:(NSData*)data withCharacteristic:(NSString *)characteristicUUID{
     
-    if ([characteristicUUID isEqualToString:GM_CHARACTERISTIC]) {
+    if ([GM_CHARACTERISTIC rangeOfString:characteristicUUID].location != NSNotFound) {
         
         int offset = 0;
         int flags = [data getIntValueWith:FORMAT_UINT8 Offset:offset];
@@ -177,7 +177,7 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
             }
         }
         
-    } else if ([GM_CONTEXT_CHARACTERISTIC isEqualToString:characteristicUUID]) {
+    } else if ([GM_CONTEXT_CHARACTERISTIC rangeOfString:characteristicUUID].location != NSNotFound) {
         int offset = 0;
         int flags = [data getIntValueWith:FORMAT_UINT8 Offset:offset];
         offset += 1;
@@ -602,7 +602,7 @@ const static int FILTER_TYPE_SEQUENCE_NUMBER = 1;
 #pragma mark -Getter and Setter
 -(NSDictionary<NSString *, GlucoseRecord *>*)mRecords{
     if (!_mRecords) {
-        _mRecords = [NSDictionary new];
+        _mRecords = [NSMutableDictionary new];
     }
     return _mRecords;
 }

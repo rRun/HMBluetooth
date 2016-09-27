@@ -433,7 +433,9 @@ static id _instance;
 
 
 - (void)centralManager:(CBCentralManager *)central didDiscoverPeripheral:(CBPeripheral *)peripheral advertisementData:(NSDictionary *)advertisementData RSSI:(NSNumber *)RSSI {
-    
+	if ([peripheral.name length]<=0) {
+		return;
+	}
     if ([peripheral.name rangeOfString:self.filter].location != NSNotFound || [self.filter length]==0 || self.filter == nil) {
         
         NSLog(@"发现设备:%@", peripheral);
