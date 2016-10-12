@@ -38,6 +38,7 @@
 @property (nonatomic, copy)  PeripheralReadValueForCharacteristicBlock readValueBlock;
 @property (nonatomic, copy)  PeripheralNotifyValueForCharacteristicsBlock notifyValueBlock;
 @property (nonatomic, copy)  PeripheralReadRSSIBlock readRSSIBlock;
+@property (nonatomic, copy)  ListenDeviceStateBlock listenBlock;
 
 @end
 
@@ -85,6 +86,12 @@ static id _instance;
     [self performSelector:@selector(stopScanDevices) withObject:nil afterDelay:timeout];
 }
 
+/**
+ *  监听蓝牙状态
+ */
+-(void)listenDeviceState:(ListenDeviceStateBlock)block{
+    self.listenBlock = block;
+}
 - (void)stopScanDevices {
     
     NSLog(@"扫描设备结束");
@@ -429,6 +436,10 @@ static id _instance;
 - (void)centralManagerDidUpdateState:(CBCentralManager *)central {
     NSLog(@"当前的设备状态:%ld", (long)central.state);
     self.state = central.state;
+    
+    if (self.listenBlock) {
+        self.listenBlock(self,central.state);
+    }
 }
 
 

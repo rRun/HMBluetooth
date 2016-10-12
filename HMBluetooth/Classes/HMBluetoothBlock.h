@@ -23,12 +23,21 @@
 typedef void (^ScanDevicesCompleteBlock)(NSArray<HMDevice *> *devices,NSError *err,NSInteger state);
 
 /**
+ *  蓝牙状态的回调
+ *
+ *  @param device 设备
+ *  @param err 错误信息
+ */
+typedef void (^ConnectionDeviceBlock)(HMDevice *device, NSError *err,NSInteger state);
+
+
+/**
  *  连接设备的回调
  *
  *  @param device 设备
  *  @param err 错误信息
  */
-typedef void (^ConnectionDeviceBlock)(HMDevice *device, NSError *err);
+typedef void (^ListenDeviceStateBlock)(HMDevice *device, CBManagerState state);
 
 /**
  *  发现服务和特征的回调

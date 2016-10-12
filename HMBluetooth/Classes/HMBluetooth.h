@@ -61,6 +61,10 @@ static NSString * ReadValueChange = @"ValueChanged";
  */
 - (void)stopScanDevices;
 
+/**
+ *  监听蓝牙状态
+ */
+-(void)listenDeviceState:(ListenDeviceStateBlock)block;
 #pragma mark - Connect Devices
 /**
  *  连接设备
