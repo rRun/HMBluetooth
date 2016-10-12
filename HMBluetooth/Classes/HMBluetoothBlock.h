@@ -37,7 +37,7 @@ typedef void (^ConnectionDeviceBlock)(HMDevice *device, NSError *err);
  *  @param device 设备
  *  @param err 错误信息
  */
-typedef void (^ListenDeviceStateBlock)(HMDevice *device, CBManagerState state);
+typedef void (^ListenDeviceStateBlock)(HMDevice *device, int state);
 
 /**
  *  发现服务和特征的回调
