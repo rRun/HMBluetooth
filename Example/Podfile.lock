@@ -1,6 +1,5 @@
 PODS:
-  - HMBluetooth (0.1.3):
-    - MPBluetoothKit (~> 0.1.0)
+  - HMBluetooth (0.1.7)
   - MPBluetoothKit (0.1.0)
 
 DEPENDENCIES:
@@ -12,7 +11,7 @@ EXTERNAL SOURCES:
     :path: "../"
 
 SPEC CHECKSUMS:
-  HMBluetooth: 281c642b3e3096da90ba7a538acabdbc47b54ab7
+  HMBluetooth: 976f4a4a3d21c9c9950461936d3e91a7cb13b54f
   MPBluetoothKit: 40f9e1c3cf9f5d7357f344560015b8c8cc7f5b53
 
 PODFILE CHECKSUM: 456c53492982c8d5f4467fc5026c2a6600122294
