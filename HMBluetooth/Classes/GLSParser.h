@@ -12,15 +12,15 @@
 #import "GLSParserPrt.h"
 
 /** Glucose service UUID */
-static NSString * GLS_SERVICE_UUID = @"00001808-0000-1000-8000-00805f9b34fb";
+static NSString * GLS_SERVICE_UUID = @"1808";
 /** Glucose Measurement characteristic UUID */
-static NSString * GM_CHARACTERISTIC = @"00002A18-0000-1000-8000-00805f9b34fb";
+static NSString * GM_CHARACTERISTIC = @"2A18";
 /** Glucose Measurement Context characteristic UUID */
-static NSString * GM_CONTEXT_CHARACTERISTIC = @"00002A34-0000-1000-8000-00805f9b34fb";
+static NSString * GM_CONTEXT_CHARACTERISTIC = @"2A34";
 /** Glucose Feature characteristic UUID */
-static NSString * GF_CHARACTERISTIC = @"00002A51-0000-1000-8000-00805f9b34fb";
+static NSString * GF_CHARACTERISTIC = @"2A51";
 /** Record Access Control Point characteristic UUID */
-static NSString * RACP_CHARACTERISTIC = @"00002A52-0000-1000-8000-00805f9b34fb";
+static NSString * RACP_CHARACTERISTIC = @"2A52";
 
 @class HMBluetooth;
 @class CBCharacteristic;
